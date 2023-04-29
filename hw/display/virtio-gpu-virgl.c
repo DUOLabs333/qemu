@@ -644,6 +644,7 @@ void virtio_gpu_virgl_process_cmd(VirtIOGPU *g,
         virtio_gpu_get_edid(g, cmd);
         break;
 #ifdef HAVE_VIRGL_RESOURCE_BLOB
+    #if 0
     case VIRTIO_GPU_CMD_RESOURCE_CREATE_BLOB:
         virgl_cmd_resource_create_blob(g, cmd);
         break;
@@ -653,6 +654,10 @@ void virtio_gpu_virgl_process_cmd(VirtIOGPU *g,
     case VIRTIO_GPU_CMD_RESOURCE_UNMAP_BLOB:
         virgl_cmd_resource_unmap_blob(g, cmd);
         break;
+    #else
+        case VIRTIO_GPU_CMD_RESOURCE_CREATE_BLOB:
+            break;
+    #endif
 #endif /* HAVE_VIRGL_RESOURCE_BLOB */
 
     case VIRTIO_GPU_CMD_RESOURCE_ASSIGN_UUID:
