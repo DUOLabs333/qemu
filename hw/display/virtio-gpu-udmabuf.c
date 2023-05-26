@@ -22,7 +22,14 @@
 #include "exec/ramblock.h"
 #include "sysemu/hostmem.h"
 #include <sys/ioctl.h>
-#include <linux/memfd.h>
+#ifdef __APPLE__
+    #include <sys/mman.h>
+    int udmabuf_fd(){
+        return shm_open("udmabuf",O_CREAT|O_RDWR);
+    }
+#else
+    #include <linux/memfd.h>
+#endif
 #include "qemu/memfd.h"
 #include "standard-headers/linux/udmabuf.h"
 
@@ -37,7 +44,7 @@ static void virtio_gpu_create_udmabuf(struct virtio_gpu_simple_resource *res)
     if (udmabuf < 0) {
         return;
     }
-
+    #ifndef __APPLE__
     list = g_malloc0(sizeof(struct udmabuf_create_list) +
                      sizeof(struct udmabuf_create_item) * res->iov_cnt);
 
@@ -60,11 +67,17 @@ static void virtio_gpu_create_udmabuf(struct virtio_gpu_simple_resource *res)
     list->flags = UDMABUF_FLAGS_CLOEXEC;
 
     res->dmabuf_fd = ioctl(udmabuf, UDMABUF_CREATE_LIST, list);
+    #else
+        
+        res->dmabuf_fd=udmabuf;
+    #endif
     if (res->dmabuf_fd < 0) {
         warn_report("%s: UDMABUF_CREATE_LIST: %s", __func__,
                     strerror(errno));
     }
+    #ifndef __APPLE__
     g_free(list);
+    #endif
 }
 
 static void virtio_gpu_remap_udmabuf(struct virtio_gpu_simple_resource *res)

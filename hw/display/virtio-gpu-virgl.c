@@ -100,8 +100,17 @@ static void virgl_cmd_context_create(VirtIOGPU *g,
     trace_virtio_gpu_cmd_ctx_create(cc.hdr.ctx_id,
                                     cc.debug_name);
 
-    virgl_renderer_context_create(cc.hdr.ctx_id, cc.nlen,
-                                  cc.debug_name);
+    if (cc.context_init) {
+        fprintf(stderr,"HELLO\n");
+        virgl_renderer_context_create_with_flags(cc.hdr.ctx_id,
+                                                     cc.context_init,
+                                                     cc.nlen,
+                                                     cc.debug_name);
+        return;
+    }
+        
+    virgl_renderer_context_create(cc.hdr.ctx_id, cc.nlen, cc.debug_name);
+
 }
 
 static void virgl_cmd_context_destroy(VirtIOGPU *g,
@@ -433,6 +442,7 @@ static void virgl_cmd_resource_create_blob(VirtIOGPU *g,
 
     VIRTIO_GPU_FILL_CMD(cblob);
     virtio_gpu_create_blob_bswap(&cblob);
+
     trace_virtio_gpu_cmd_res_create_blob(cblob.resource_id, cblob.size);
 
     if (cblob.resource_id == 0) {
@@ -455,7 +465,7 @@ static void virgl_cmd_resource_create_blob(VirtIOGPU *g,
 
     res->resource_id = cblob.resource_id;
     res->blob_size = cblob.size;
-
+    
     if (cblob.blob_mem != VIRTIO_GPU_BLOB_MEM_HOST3D) {
         ret = virtio_gpu_create_mapping_iov(g, cblob.nr_entries, sizeof(cblob),
                                             cmd, &res->addrs, &res->iov,
@@ -480,9 +490,8 @@ static void virgl_cmd_resource_create_blob(VirtIOGPU *g,
         .num_iovs = res->iov_cnt,
     };
     ret = virgl_renderer_resource_create_blob(&virgl_args);
+
     if (ret) {
-        qemu_log_mask(LOG_GUEST_ERROR, "%s: virgl blob create error: %s\n",
-                      __func__, strerror(-ret));
         cmd->error = VIRTIO_GPU_RESP_ERR_UNSPEC;
     }
 }
@@ -656,6 +665,7 @@ void virtio_gpu_virgl_process_cmd(VirtIOGPU *g,
         break;
     #else
         case VIRTIO_GPU_CMD_RESOURCE_CREATE_BLOB:
+            virgl_cmd_resource_create_blob(g, cmd);
             break;
     #endif
 #endif /* HAVE_VIRGL_RESOURCE_BLOB */
@@ -670,6 +680,7 @@ void virtio_gpu_virgl_process_cmd(VirtIOGPU *g,
     if (cmd->finished) {
         return;
     }
+    
     if (cmd->error) {
         fprintf(stderr, "%s: ctrl 0x%x, error 0x%x\n", __func__,
                 cmd->cmd_hdr.type, cmd->error);
