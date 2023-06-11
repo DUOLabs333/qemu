@@ -101,7 +101,6 @@ static void virgl_cmd_context_create(VirtIOGPU *g,
                                     cc.debug_name);
 
     if (cc.context_init) {
-        fprintf(stderr,"HELLO\n");
         virgl_renderer_context_create_with_flags(cc.hdr.ctx_id,
                                                      cc.context_init,
                                                      cc.nlen,
