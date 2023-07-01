@@ -24,7 +24,9 @@
 #include <sys/ioctl.h>
 #ifdef __APPLE__
     #include <sys/mman.h>
+    #include <math.h>
     int udmabuf_fd(){
+        //shm_unlink("udmabuf");
         return shm_open("udmabuf",O_CREAT|O_RDWR);
     }
 #else
@@ -68,7 +70,7 @@ static void virtio_gpu_create_udmabuf(struct virtio_gpu_simple_resource *res)
 
     res->dmabuf_fd = ioctl(udmabuf, UDMABUF_CREATE_LIST, list);
     #else
-        
+        //ftruncate(udmabuf,5*pow(10,8));
         res->dmabuf_fd=udmabuf;
     #endif
     if (res->dmabuf_fd < 0) {
@@ -85,6 +87,7 @@ static void virtio_gpu_remap_udmabuf(struct virtio_gpu_simple_resource *res)
     res->remapped = mmap(NULL, res->blob_size, PROT_READ,
                          MAP_SHARED, res->dmabuf_fd, 0);
     if (res->remapped == MAP_FAILED) {
+        //fprintf(stderr,"%d\n",res->blob_size);
         warn_report("%s: dmabuf mmap failed: %s", __func__,
                     strerror(errno));
         res->remapped = NULL;

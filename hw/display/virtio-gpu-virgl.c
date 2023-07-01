@@ -464,7 +464,7 @@ static void virgl_cmd_resource_create_blob(VirtIOGPU *g,
 
     res->resource_id = cblob.resource_id;
     res->blob_size = cblob.size;
-    
+
     if (cblob.blob_mem != VIRTIO_GPU_BLOB_MEM_HOST3D) {
         ret = virtio_gpu_create_mapping_iov(g, cblob.nr_entries, sizeof(cblob),
                                             cmd, &res->addrs, &res->iov,
@@ -524,6 +524,7 @@ static void virgl_cmd_resource_map_blob(VirtIOGPU *g,
 
     ret = virgl_renderer_resource_map(res->resource_id, &res->mapped, &size);
     if (ret) {
+        fprintf(stderr,"%s\n",strerror(-ret));
         qemu_log_mask(LOG_GUEST_ERROR, "%s: resource map error: %s\n",
                       __func__, strerror(-ret));
         cmd->error = VIRTIO_GPU_RESP_ERR_INVALID_RESOURCE_ID;
@@ -652,7 +653,7 @@ void virtio_gpu_virgl_process_cmd(VirtIOGPU *g,
         virtio_gpu_get_edid(g, cmd);
         break;
 #ifdef HAVE_VIRGL_RESOURCE_BLOB
-    #if 0
+    #if 1
     case VIRTIO_GPU_CMD_RESOURCE_CREATE_BLOB:
         virgl_cmd_resource_create_blob(g, cmd);
         break;
